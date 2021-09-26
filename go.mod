@@ -2,4 +2,4 @@ module tokenDemo
 
 go 1.15
 
-require github.com/dgrijalva/jwt-go v3.2.0+incompatible
+require github.com/golang-jwt/jwt/v4 v4.1.0
