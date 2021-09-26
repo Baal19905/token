@@ -1,6 +1,8 @@
 package token
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 )
@@ -13,8 +15,12 @@ func TestNewToken(t *testing.T) {
 		t.Errorf("NewToken failed[%s]\n", err.Error())
 		return
 	}
-	t.Logf("AccessToken[%s]\n", token.AccessToken)
-	t.Logf("RefreshToken[%s]\n", token.RefreshToken)
+	data, _ := json.Marshal(token)
+	t.Logf("Token: %s\n", data)
+	// 不序列化secret字段
+	if strings.Contains(string(data), "secret") {
+		t.Errorf("secret in JSON!!!\n")
+	}
 }
 
 func TestValidateAccessToken(t *testing.T) {

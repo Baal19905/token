@@ -10,9 +10,9 @@ import (
 )
 
 type Token struct {
-	AccessToken  string
-	RefreshToken string
-	secret       []byte
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	secret       []byte `json:"-"`
 }
 
 // 生成双token
