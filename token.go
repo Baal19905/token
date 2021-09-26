@@ -12,21 +12,22 @@ import (
 type Token struct {
 	AccessToken  string
 	RefreshToken string
+	secret       []byte
 }
-
-var secret = []byte{61, 123, 96, 64, 41, 67, 35, 35, 41, 41, 36, 52, 56, 23, 31, 63, 37, 52, 98, 23, 25, 89, 47, 40, 42, 115, 100, 19, 102, 45, 87, 70}
 
 // 生成双token
 // 超时时间为0时永久有效
-func NewToken(userid string, accessExp, refreshExp time.Duration) (*Token, error) {
-	token := &Token{}
+func NewToken(userid string, secret []byte, accessExp, refreshExp time.Duration) (*Token, error) {
+	token := &Token{
+		secret: secret,
+	}
 	var err error
 
-	if token.AccessToken, err = accessToken(userid, accessExp); err != nil {
+	if token.AccessToken, err = token.accessToken(userid, accessExp); err != nil {
 		return nil, err
 	}
 
-	if token.RefreshToken, err = refreshToken(token.AccessToken, refreshExp); err != nil {
+	if token.RefreshToken, err = token.refreshToken(token.AccessToken, refreshExp); err != nil {
 		return nil, err
 	}
 
@@ -40,7 +41,7 @@ func (t *Token) ValidateAccessToken() (string, error) {
 		if !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return secret, nil
+		return t.secret, nil
 	})
 
 	if err != nil {
@@ -89,7 +90,7 @@ func (t *Token) ValidateRefreshToken() (string, error) {
 
 // 刷新双token
 func (t *Token) Refresh(userid string, accessExp, refreshExp time.Duration) error {
-	token, err := NewToken(userid, accessExp, refreshExp)
+	token, err := NewToken(userid, t.secret, accessExp, refreshExp)
 	if err != nil {
 		return err
 	}
@@ -100,16 +101,16 @@ func (t *Token) Refresh(userid string, accessExp, refreshExp time.Duration) erro
 
 // 生成AccessToken
 // exp为0时永久有效
-func accessToken(userid string, exp time.Duration) (string, error) {
+func (t *Token) accessToken(userid string, exp time.Duration) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["user_id"] = userid
 	claims["random"] = time.Now().Unix()
 	if exp > 0 {
 		claims["exp"] = time.Now().Add(exp).Unix()
 	}
-	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tk := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	token, err := t.SignedString(secret)
+	token, err := tk.SignedString(t.secret)
 	if err != nil {
 		return "", err
 	}
@@ -118,16 +119,16 @@ func accessToken(userid string, exp time.Duration) (string, error) {
 
 // 生成RefreshToken
 // exp为0时永久有效
-func refreshToken(accessToken string, exp time.Duration) (string, error) {
+func (t *Token) refreshToken(accessToken string, exp time.Duration) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["token"] = accessToken
 	claims["random"] = time.Now().Nanosecond()
 	if exp > 0 {
 		claims["exp"] = time.Now().Add(exp).Unix()
 	}
-	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tk := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	token, err := t.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	token, err := tk.SignedString(t.secret)
 	if err != nil {
 		return token, err
 	}
