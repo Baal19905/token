@@ -1,4 +1,4 @@
-module github.com/Baal19905/tokenDemo
+module github.com/Baal19905/tokenDemo/v2
 
 go 1.15
 
