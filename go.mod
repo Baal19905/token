@@ -1,4 +1,4 @@
-module tokenDemo
+module Baal19905/tokenDemo/v4
 
 go 1.15
 
