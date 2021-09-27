@@ -1,6 +1,7 @@
 package token
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -97,6 +98,20 @@ func (t *Token) Refresh(userid string, accessExp, refreshExp time.Duration) erro
 	t.AccessToken = token.AccessToken
 	t.RefreshToken = token.RefreshToken
 	return nil
+}
+
+// Token转换JSON
+func (t *Token) Token2JSON() (string, error) {
+	buf, err := json.Marshal(t)
+	if err != nil {
+		return "", err
+	}
+	return string(buf), nil
+}
+
+// JSON转换Token
+func (t *Token) JSON2Token(j string) error {
+	return json.Unmarshal([]byte(j), t)
 }
 
 // 生成AccessToken

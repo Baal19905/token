@@ -121,3 +121,24 @@ func TestRefresh(t *testing.T) {
 		t.Error("Same Token after Refresh!!!\n")
 	}
 }
+
+func TestJSON(t *testing.T) {
+	token, err := NewToken("abcd", secretTest, 0, 0)
+	if err != nil {
+		t.Errorf("NewToken failed[%s]\n", err.Error())
+		return
+	}
+	json, err := token.Token2JSON()
+	if err != nil {
+		t.Errorf("Token2JSON failed[%s]\n", err.Error())
+		return
+	}
+	token2 := &Token{}
+	if err := token2.JSON2Token(json); err != nil {
+		t.Errorf("JSON2Token failed[%s]\n", err.Error())
+		return
+	}
+	if token.AccessToken != token2.AccessToken || token.RefreshToken != token2.RefreshToken {
+		t.Errorf("token != token2!!!\n")
+	}
+}
