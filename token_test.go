@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-var secret = []byte{61, 123, 96, 64, 41, 67, 35, 35, 41, 41, 36, 52, 56, 23, 31, 63, 37, 52, 98, 23, 25, 89, 47, 40, 42, 115, 100, 19, 102, 45, 87, 70}
+var secretTest = []byte{61, 123, 96, 64, 41, 67, 35, 35, 41, 41, 36, 52, 56, 23, 31, 63, 37, 52, 98, 23, 25, 89, 47, 40, 42, 115, 100, 19, 102, 45, 87, 70}
 
 func TestNewToken(t *testing.T) {
-	token, err := NewToken("abcd", secret, 0, 0)
+	token, err := NewToken("abcd", secretTest, 0, 0)
 	if err != nil {
 		t.Errorf("NewToken failed[%s]\n", err.Error())
 		return
@@ -24,13 +24,13 @@ func TestNewToken(t *testing.T) {
 }
 
 func TestValidateAccessToken(t *testing.T) {
-	token, err := NewToken("abcd", secret, time.Second*5, 0)
+	token, err := NewToken("abcd", secretTest, time.Second*5, 0)
 	if err != nil {
 		t.Errorf("NewToken failed， %s\n", err.Error())
 		return
 	}
 
-	token2, err := NewToken("1234", secret, 0, 0)
+	token2, err := NewToken("1234", secretTest, 0, 0)
 	if err != nil {
 		t.Errorf("NewToken failed， %s\n", err.Error())
 		return
@@ -65,13 +65,13 @@ func TestValidateAccessToken(t *testing.T) {
 }
 
 func TestValidateRefreshToken(t *testing.T) {
-	token, err := NewToken("abcd", secret, 0, time.Second*5)
+	token, err := NewToken("abcd", secretTest, 0, time.Second*5)
 	if err != nil {
 		t.Errorf("NewToken failed， %s\n", err.Error())
 		return
 	}
 
-	token2, err := NewToken("1234", secret, 0, 0)
+	token2, err := NewToken("1234", secretTest, 0, 0)
 	if err != nil {
 		t.Errorf("NewToken failed， %s\n", err.Error())
 		return
@@ -106,7 +106,7 @@ func TestValidateRefreshToken(t *testing.T) {
 }
 
 func TestRefresh(t *testing.T) {
-	token, err := NewToken("abcd", secret, 0, 0)
+	token, err := NewToken("abcd", secretTest, 0, 0)
 	if err != nil {
 		t.Errorf("NewToken failed[%s]\n", err.Error())
 		return
