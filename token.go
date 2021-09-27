@@ -4,31 +4,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 )
 
+// 配置接口
+type Config interface {
+	Secret() []byte // 用于Token包获取Secret
+}
+
+// 双Token
 type Token struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	Conf         Config `json:"-"`
 }
-
-var secret = []byte{}
 
 // 生成双token
 // 超时时间为0时永久有效
-func NewToken(userid string, scrt []byte, accessExp, refreshExp time.Duration) (*Token, error) {
-	token := &Token{}
-	secret = scrt
+func NewToken(userid string, conf Config, accessExp, refreshExp time.Duration) (*Token, error) {
+	token := &Token{
+		Conf: conf,
+	}
 	var err error
 
-	if token.AccessToken, err = accessToken(userid, accessExp); err != nil {
+	if token.AccessToken, err = token.accessToken(userid, accessExp); err != nil {
 		return nil, err
 	}
 
-	if token.RefreshToken, err = refreshToken(token.AccessToken, refreshExp); err != nil {
+	if token.RefreshToken, err = token.refreshToken(token.AccessToken, refreshExp); err != nil {
 		return nil, err
 	}
 
@@ -42,7 +47,7 @@ func (t *Token) ValidateAccessToken() (string, error) {
 		if !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return secret, nil
+		return t.Conf.Secret(), nil
 	})
 
 	if err != nil {
@@ -63,7 +68,7 @@ func (t *Token) ValidateRefreshToken() (string, error) {
 		if !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv("SECRET_KEY")), nil
+		return t.Conf.Secret(), nil
 	})
 
 	if err != nil {
@@ -91,7 +96,7 @@ func (t *Token) ValidateRefreshToken() (string, error) {
 
 // 刷新双token
 func (t *Token) Refresh(userid string, accessExp, refreshExp time.Duration) error {
-	token, err := NewToken(userid, secret, accessExp, refreshExp)
+	token, err := NewToken(userid, t.Conf, accessExp, refreshExp)
 	if err != nil {
 		return err
 	}
@@ -110,13 +115,17 @@ func (t *Token) Token2JSON() (string, error) {
 }
 
 // JSON转换Token
-func (t *Token) JSON2Token(j string) error {
-	return json.Unmarshal([]byte(j), t)
+func (t *Token) JSON2Token(j string, conf Config) error {
+	if err := json.Unmarshal([]byte(j), t); err != nil {
+		return err
+	}
+	t.Conf = conf
+	return nil
 }
 
 // 生成AccessToken
 // exp为0时永久有效
-func accessToken(userid string, exp time.Duration) (string, error) {
+func (t *Token) accessToken(userid string, exp time.Duration) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["user_id"] = userid
 	claims["random"] = time.Now().Unix()
@@ -125,7 +134,7 @@ func accessToken(userid string, exp time.Duration) (string, error) {
 	}
 	tk := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	token, err := tk.SignedString(secret)
+	token, err := tk.SignedString(t.Conf.Secret())
 	if err != nil {
 		return "", err
 	}
@@ -134,7 +143,7 @@ func accessToken(userid string, exp time.Duration) (string, error) {
 
 // 生成RefreshToken
 // exp为0时永久有效
-func refreshToken(accessToken string, exp time.Duration) (string, error) {
+func (t *Token) refreshToken(accessToken string, exp time.Duration) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["token"] = accessToken
 	claims["random"] = time.Now().Nanosecond()
@@ -143,7 +152,7 @@ func refreshToken(accessToken string, exp time.Duration) (string, error) {
 	}
 	tk := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	token, err := tk.SignedString(secret)
+	token, err := tk.SignedString(t.Conf.Secret())
 	if err != nil {
 		return token, err
 	}

@@ -9,8 +9,17 @@ import (
 
 var secretTest = []byte{61, 123, 96, 64, 41, 67, 35, 35, 41, 41, 36, 52, 56, 23, 31, 63, 37, 52, 98, 23, 25, 89, 47, 40, 42, 115, 100, 19, 102, 45, 87, 70}
 
+type MyConf struct {
+}
+
+func (mc *MyConf) Secret() []byte {
+	return secretTest
+}
+
+var cnf = &MyConf{}
+
 func TestNewToken(t *testing.T) {
-	token, err := NewToken("abcd", secretTest, 0, 0)
+	token, err := NewToken("abcd", cnf, 0, 0)
 	if err != nil {
 		t.Errorf("NewToken failed[%s]\n", err.Error())
 		return
@@ -24,13 +33,13 @@ func TestNewToken(t *testing.T) {
 }
 
 func TestValidateAccessToken(t *testing.T) {
-	token, err := NewToken("abcd", secretTest, time.Second*5, 0)
+	token, err := NewToken("abcd", cnf, time.Second*5, 0)
 	if err != nil {
 		t.Errorf("NewToken failed， %s\n", err.Error())
 		return
 	}
 
-	token2, err := NewToken("1234", secretTest, 0, 0)
+	token2, err := NewToken("1234", cnf, 0, 0)
 	if err != nil {
 		t.Errorf("NewToken failed， %s\n", err.Error())
 		return
@@ -65,13 +74,13 @@ func TestValidateAccessToken(t *testing.T) {
 }
 
 func TestValidateRefreshToken(t *testing.T) {
-	token, err := NewToken("abcd", secretTest, 0, time.Second*5)
+	token, err := NewToken("abcd", cnf, 0, time.Second*5)
 	if err != nil {
 		t.Errorf("NewToken failed， %s\n", err.Error())
 		return
 	}
 
-	token2, err := NewToken("1234", secretTest, 0, 0)
+	token2, err := NewToken("1234", cnf, 0, 0)
 	if err != nil {
 		t.Errorf("NewToken failed， %s\n", err.Error())
 		return
@@ -106,7 +115,7 @@ func TestValidateRefreshToken(t *testing.T) {
 }
 
 func TestRefresh(t *testing.T) {
-	token, err := NewToken("abcd", secretTest, 0, 0)
+	token, err := NewToken("abcd", cnf, 0, 0)
 	if err != nil {
 		t.Errorf("NewToken failed[%s]\n", err.Error())
 		return
@@ -123,7 +132,7 @@ func TestRefresh(t *testing.T) {
 }
 
 func TestJSON(t *testing.T) {
-	token, err := NewToken("abcd", secretTest, 0, 0)
+	token, err := NewToken("abcd", cnf, 0, 0)
 	if err != nil {
 		t.Errorf("NewToken failed[%s]\n", err.Error())
 		return
@@ -134,8 +143,16 @@ func TestJSON(t *testing.T) {
 		return
 	}
 	token2 := &Token{}
-	if err := token2.JSON2Token(json); err != nil {
+	if err := token2.JSON2Token(json, cnf); err != nil {
 		t.Errorf("JSON2Token failed[%s]\n", err.Error())
+		return
+	}
+	if _, err = token2.ValidateAccessToken(); err != nil {
+		t.Errorf("token2.AccessToken, invalid AccessToken[%s]!!!\n", err.Error())
+		return
+	}
+	if _, err = token2.ValidateRefreshToken(); err != nil {
+		t.Errorf("token2.AccessToken, invalid RefreshToken[%s]!!!\n", err.Error())
 		return
 	}
 	if token.AccessToken != token2.AccessToken || token.RefreshToken != token2.RefreshToken {
