@@ -124,9 +124,25 @@ func TestRefresh(t *testing.T) {
 	t.Logf("RefreshToken[%s]\n", token.RefreshToken)
 	time.Sleep(time.Second)
 	t.Logf("---------------After Refresh---------------\n")
+	// 使用完整的双token对象刷新
 	tmp := *token
-	token.Refresh("abcd", 0, 0)
+	if err := tmp.Refresh("abcd", cnf, 0, 0); err != nil {
+		t.Errorf("Refresh failed[%s]!!!\n", err.Error())
+		return
+	}
 	if tmp.AccessToken == token.AccessToken || tmp.RefreshToken == token.RefreshToken {
+		t.Error("Same Token after Refresh!!!\n")
+		return
+	}
+	// 使用不完整双token对象刷新
+	tmp2 := &Token{
+		AccessToken: token.AccessToken,
+	}
+	if err := tmp2.Refresh("abcd", cnf, 0, 0); err != nil {
+		t.Errorf("Refresh failed[%s]!!!\n", err.Error())
+		return
+	}
+	if tmp2.AccessToken == token.AccessToken || tmp2.RefreshToken == token.RefreshToken {
 		t.Error("Same Token after Refresh!!!\n")
 	}
 }

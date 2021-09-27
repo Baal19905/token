@@ -95,8 +95,8 @@ func (t *Token) ValidateRefreshToken() (string, error) {
 }
 
 // 刷新双token
-func (t *Token) Refresh(userid string, accessExp, refreshExp time.Duration) error {
-	token, err := NewToken(userid, t.Conf, accessExp, refreshExp)
+func (t *Token) Refresh(userid string, conf Config, accessExp, refreshExp time.Duration) error {
+	token, err := NewToken(userid, conf, accessExp, refreshExp)
 	if err != nil {
 		return err
 	}
@@ -126,6 +126,9 @@ func (t *Token) JSON2Token(j string, conf Config) error {
 // 生成AccessToken
 // exp为0时永久有效
 func (t *Token) accessToken(userid string, exp time.Duration) (string, error) {
+	if t.Conf == nil {
+		return "", errors.New("Invalid Conf")
+	}
 	claims := jwt.MapClaims{}
 	claims["user_id"] = userid
 	claims["random"] = time.Now().Unix()
@@ -144,6 +147,9 @@ func (t *Token) accessToken(userid string, exp time.Duration) (string, error) {
 // 生成RefreshToken
 // exp为0时永久有效
 func (t *Token) refreshToken(accessToken string, exp time.Duration) (string, error) {
+	if t.Conf == nil {
+		return "", errors.New("Invalid Conf")
+	}
 	claims := jwt.MapClaims{}
 	claims["token"] = accessToken
 	claims["random"] = time.Now().Nanosecond()
