@@ -47,8 +47,8 @@ func TestValidateAccessToken(t *testing.T) {
 	// 超时测试
 	time.Sleep(time.Second * 6)
 	t.Logf("--------------6 later---------------\n")
-	userid, err := token.ValidateAccessToken()
-	if userid != "abcd" || err != nil {
+	payload, err := token.ValidateAccessToken()
+	if err != nil || payload.UserId != "abcd" {
 		t.Logf("AccessToken[%s] is expired\n", token.AccessToken)
 	} else {
 		t.Errorf("AccessToken[%s] is not expired after 6s!!!\n", token.AccessToken)
@@ -57,16 +57,16 @@ func TestValidateAccessToken(t *testing.T) {
 	tmp := []byte(token.AccessToken)
 	tmp[0] += 1
 	token.AccessToken = string(tmp)
-	userid, err = token.ValidateAccessToken()
-	if userid != "abcd" || err != nil {
+	payload, err = token.ValidateAccessToken()
+	if err != nil || payload.UserId != "abcd" {
 		t.Logf("Invalid AccessToken[%s]\n", err.Error())
 		return
 	} else {
 		t.Errorf("Valid AccessToken[%s] with change\n", token.AccessToken)
 	}
 	// 非本用户token测试
-	userid, err = token2.ValidateAccessToken()
-	if userid != "abcd" || err != nil {
+	payload, err = token2.ValidateAccessToken()
+	if err != nil || payload.UserId != "abcd" {
 		t.Logf("Invalid AccessToken[%s]\n", token.AccessToken)
 	} else {
 		t.Errorf("not the same user!!!\n")
@@ -88,8 +88,8 @@ func TestValidateRefreshToken(t *testing.T) {
 	// 超时测试
 	time.Sleep(time.Second * 6)
 	t.Logf("--------------6 later---------------\n")
-	userid, err := token.ValidateRefreshToken()
-	if userid != "abcd" || err != nil {
+	payload, err := token.ValidateRefreshToken()
+	if err != nil || payload.AccessToken != token.AccessToken {
 		t.Logf("RefreshToken[%s] is expired\n", token.RefreshToken)
 	} else {
 		t.Errorf("RefreshToken[%s] is not expired after 6s!!!\n", token.RefreshToken)
@@ -98,16 +98,16 @@ func TestValidateRefreshToken(t *testing.T) {
 	tmp := []byte(token.RefreshToken)
 	tmp[0] += 1
 	token.RefreshToken = string(tmp)
-	userid, err = token.ValidateRefreshToken()
-	if userid != "abcd" || err != nil {
+	payload, err = token.ValidateRefreshToken()
+	if err != nil || payload.AccessToken != token.AccessToken {
 		t.Logf("Invalid RefreshToken[%s]\n", err.Error())
 		return
 	} else {
 		t.Errorf("Valid RefreshToken[%s] with change\n", token.RefreshToken)
 	}
 	// 非本用户token测试
-	userid, err = token2.ValidateRefreshToken()
-	if userid != "abcd" || err != nil {
+	payload, err = token2.ValidateRefreshToken()
+	if err != nil || payload.AccessToken != token.AccessToken {
 		t.Logf("Invalid RefreshToken[%s]\n", token.RefreshToken)
 	} else {
 		t.Errorf("not the same user!!!\n")
